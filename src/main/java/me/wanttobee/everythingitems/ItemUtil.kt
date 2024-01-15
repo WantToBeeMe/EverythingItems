@@ -1,6 +1,6 @@
 package me.wanttobee.everythingitems
 
-import me.wanttobee.everythingitems.interactiveinventory.InventoryMenuSystem
+import me.wanttobee.everythingitems.interactiveinventory.InteractiveInventorySystem
 import me.wanttobee.everythingitems.interactiveitems.InteractiveHotBarSystem
 import org.bukkit.ChatColor
 import org.bukkit.Material
@@ -28,12 +28,12 @@ object ItemUtil {
         this.title = title
 
         plugin.server.pluginManager.registerEvents(InteractiveHotBarSystem, plugin)
-        plugin.server.pluginManager.registerEvents(InventoryMenuSystem, plugin)
+        plugin.server.pluginManager.registerEvents(InteractiveInventorySystem, plugin)
         itemNamespaceKey = NamespacedKey(plugin, "me_wanttobeeme_everything_items")
     }
     fun disablePlugin(){
         InteractiveHotBarSystem.disablePlugin()
-        InventoryMenuSystem.disablePlugin()
+        InteractiveInventorySystem.disablePlugin()
     }
 
 

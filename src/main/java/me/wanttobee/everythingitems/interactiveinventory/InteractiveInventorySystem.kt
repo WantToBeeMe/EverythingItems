@@ -10,16 +10,16 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
 
-object InventoryMenuSystem : Listener {
-    private val inventories : MutableList<IInventoryMenu> = mutableListOf()
+object InteractiveInventorySystem : Listener {
+    private val inventories : MutableList<InteractiveInventory> = mutableListOf()
 
-    fun addInventory(inv : IInventoryMenu) : Boolean{
+    fun addInventory(inv : InteractiveInventory) : Boolean{
         val contains = inventories.contains(inv)
         if(!contains)
             inventories.add(inv)
         return !contains
     }
-    fun removeInventory(inv : IInventoryMenu) : Boolean{
+    fun removeInventory(inv : InteractiveInventory) : Boolean{
         return inventories.remove(inv)
     }
 
@@ -75,10 +75,10 @@ object InventoryMenuSystem : Listener {
     }
 
     fun debugStatus(commander : Player) {
-        commander.sendMessage("${ItemUtil.title}${ChatColor.YELLOW}active menu's:")
+        commander.sendMessage("${ItemUtil.title} ${ChatColor.YELLOW}active menu's:")
         if(inventories.isEmpty())
-            commander.sendMessage("${ChatColor.GOLD}none open!!")
+            commander.sendMessage("${ChatColor.GREEN}there are no Inventories active")
         for(inv in inventories)
-            commander.sendMessage("${ChatColor.GOLD}- ${ChatColor.WHITE}${inv::class.simpleName} ${ChatColor.GRAY}(${inv.amountViewers()} open)")
+            commander.sendMessage("${ChatColor.YELLOW}- ${ChatColor.WHITE}${inv::class.simpleName} ${ChatColor.GRAY}(${inv.amountViewers()} open)")
     }
 }
