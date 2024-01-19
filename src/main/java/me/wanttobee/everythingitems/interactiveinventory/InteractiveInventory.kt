@@ -46,6 +46,16 @@ abstract class InteractiveInventory {
     protected val lockedItems : MutableSet<ItemStack> = mutableSetOf(separator)
     protected val clickEvents : MutableMap<ItemStack, (Player) -> Unit> = mutableMapOf()
 
+    fun getInventory() : Inventory{
+        return inventory
+    }
+    fun getItem(slot: Int) : ItemStack?{
+        return inventory.getItem(slot)
+    }
+    fun addItem(slot: Int, item: ItemStack) {
+        return inventory.setItem(slot,item)
+    }
+    
     // gets the amount of players that are currently looking in this inventory
     fun amountViewers() : Int{
         return inventory.viewers.size
