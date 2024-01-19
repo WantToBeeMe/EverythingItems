@@ -173,4 +173,11 @@ abstract class InteractiveInventory {
         }
     }
 
+    // don't be confused, this item does not remove the item in that slot only
+    // this method removes all items that are the same as the one in that slot
+    fun removeItemFormSlot(slot: Int){
+        val currentItemStack = inventory.getItem(slot) ?: return
+        removeItem(currentItemStack)
+    }
+
 }
