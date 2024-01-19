@@ -129,6 +129,7 @@ abstract class InteractiveInventory {
         // we don't have to lock it because they are in the locked list by default
     }
 
+
     // this method edits a given item in the inventory, going from the currentItemStack to the newItemStack
     fun swapItem(currentItemStack : ItemStack, newItemStack : ItemStack){
         val wasLocked = lockedItems.remove(currentItemStack)
@@ -143,6 +144,13 @@ abstract class InteractiveInventory {
             lockedItems.add(newItemStack)
         if(event != null)
             clickEvents[newItemStack] = event
+    }
+    
+    // don't be confused, this item does not swap the item in that slot only
+    // this method swaps all items that are the same as the one in that slot
+    fun swapItemFromSlot(swapSlot: Int, newItemStack : ItemStack){
+        val currentItemStack = inventory.getItem(swapSlot) ?:  return
+        swapItem(currentItemStack, newItemStack)
     }
 
     // removes the item from the inventory and removing it from the lockedItems list, and also removes its onClick effect
