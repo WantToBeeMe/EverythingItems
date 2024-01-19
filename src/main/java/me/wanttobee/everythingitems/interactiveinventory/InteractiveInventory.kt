@@ -145,7 +145,7 @@ abstract class InteractiveInventory {
         if(event != null)
             clickEvents[newItemStack] = event
     }
-    
+
     // don't be confused, this item does not swap the item in that slot only
     // this method swaps all items that are the same as the one in that slot
     fun swapItemFromSlot(swapSlot: Int, newItemStack : ItemStack){
