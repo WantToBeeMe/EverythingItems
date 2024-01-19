@@ -46,7 +46,7 @@ abstract class InteractiveInventory {
     protected val lockedItems : MutableSet<ItemStack> = mutableSetOf(separator)
     protected val clickEvents : MutableMap<ItemStack, (Player) -> Unit> = mutableMapOf()
 
-    fun getInventory() : Inventory{
+    fun getInternalInventory() : Inventory{
         return inventory
     }
     fun getItem(slot: Int) : ItemStack?{
