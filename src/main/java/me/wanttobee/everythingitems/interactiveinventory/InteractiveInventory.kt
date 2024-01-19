@@ -130,7 +130,7 @@ abstract class InteractiveInventory {
     }
 
     // this method edits a given item in the inventory, going from the currentItemStack to the newItemStack
-    fun editItem(currentItemStack : ItemStack, newItemStack : ItemStack){
+    fun swapItem(currentItemStack : ItemStack, newItemStack : ItemStack){
         val wasLocked = lockedItems.remove(currentItemStack)
         val event = clickEvents.remove(currentItemStack)
 
