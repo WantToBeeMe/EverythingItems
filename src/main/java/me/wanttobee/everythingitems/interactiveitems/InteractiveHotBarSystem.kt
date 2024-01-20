@@ -1,5 +1,8 @@
 package me.wanttobee.everythingitems.interactiveitems
 
+import me.wanttobee.everythingitems.ItemUtil
+import me.wanttobee.everythingitems.interactiveinventory.InteractiveInventorySystem
+import org.bukkit.ChatColor
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -33,6 +36,14 @@ object InteractiveHotBarSystem : Listener {
         for(item in hotBarArray){
             item.clear()
         }
+    }
+
+    fun debugStatus(commander : Player) {
+        commander.sendMessage("${ItemUtil.title} ${ChatColor.YELLOW}active HotBar items:")
+        if(hotBarItems.isEmpty())
+            commander.sendMessage("${ChatColor.GREEN}there are no HotBar items active")
+        for(item in hotBarItems)
+            commander.sendMessage("${ChatColor.YELLOW}- ${ChatColor.WHITE}${item::class.simpleName} ${ChatColor.GRAY}(slot: ${item.slot}, usage:${item.getUsageCount()})")
     }
 
     @EventHandler

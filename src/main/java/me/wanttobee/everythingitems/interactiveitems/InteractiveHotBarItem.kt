@@ -173,12 +173,24 @@ open class InteractiveHotBarItem {
         val itemID = itemStack.getFactoryID() ?: false
         return iID == itemID
     }
-    protected fun removeFromEveryone(){
+    // this will remove the item from everyones inventory
+    // but note that it wont remove it from the system, instead call clear() if you want it to also be removed from the system
+    fun removeFromEveryone(){
         for(player in ItemUtil.minecraftPlugin.server.onlinePlayers){
             if(isThisItem(player.inventory.getItem(slot)))
                 player.inventory.setItem(slot, ItemStack(Material.AIR))
         }
     }
+
+    fun getUsageCount() : Int{
+        var amount  = 0
+        for(player in ItemUtil.minecraftPlugin.server.onlinePlayers){
+            if(isThisItem(player.inventory.getItem(slot)))
+                amount++
+        }
+        return amount
+    }
+
 
     fun updateMeta(newMeta : ItemMeta){
         for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
