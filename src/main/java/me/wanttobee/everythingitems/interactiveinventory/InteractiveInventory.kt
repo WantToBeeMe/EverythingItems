@@ -1,6 +1,7 @@
 package me.wanttobee.everythingitems.interactiveinventory
 
-import me.wanttobee.everythingitems.ItemUtil
+import me.wanttobee.everythingitems.ItemUtil.getFactoryID
+import me.wanttobee.everythingitems.UniqueItemStack
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -21,16 +22,7 @@ abstract class InteractiveInventory {
     companion object{
         // the separator is a black pane glass which is just the default separator. nothing special
         // in theory you could use any itemStack here
-        val separator = ItemUtil.itemFactory(Material.BLACK_STAINED_GLASS_PANE, " ", null)
-
-        // both these methods are just to make your life a tad easier when creating an interactive inventory
-        // its private, so you don't use it anywhere else, cus that would be really weird if you do it somewhere where this interactiveInventory doesn't belong
-        private fun createInventory(slots : Int, title: String) : Inventory{
-            return Bukkit.createInventory(null, slots, title)
-        }
-        private fun createInventory(type : InventoryType, title: String) : Inventory{
-            return Bukkit.createInventory(null, InventoryType.DROPPER, title)
-        }
+        val separator = UniqueItemStack(Material.BLACK_STAINED_GLASS_PANE, " ", null)
     }
 
     init{
@@ -43,8 +35,21 @@ abstract class InteractiveInventory {
     }
 
     protected abstract var inventory: Inventory
-    protected val lockedItems : MutableSet<ItemStack> = mutableSetOf(separator)
-    protected val clickEvents : MutableMap<ItemStack, (Player) -> Unit> = mutableMapOf()
+    // we made sure you can only set locks and give click event to Unique items, we don't have to save the whole item anymore
+    // instead we can just save their ID's.
+    protected val lockedItems : MutableSet<Int> = mutableSetOf(separator.getFactoryID())
+    protected val clickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
+
+    fun itemIsLocked(item : ItemStack) : Boolean{
+        return lockedItems.contains(
+            item.getFactoryID() ?: return false
+        )
+    }
+    fun itemHasClickEvent(item : ItemStack) : Boolean{
+        return clickEvents.containsKey(
+            item.getFactoryID() ?: return false
+        )
+    }
 
     fun getInternalInventory() : Inventory{
         return inventory
@@ -52,7 +57,9 @@ abstract class InteractiveInventory {
     fun getItem(slot: Int) : ItemStack?{
         return inventory.getItem(slot)
     }
-    fun addItem(slot: Int, item: ItemStack) {
+    // this method adds an item to the inventory as if it was a normal inventory,
+    // no lock, no interaction, just a normal chest
+    fun addSimpleItem(slot: Int, item: ItemStack) {
         return inventory.setItem(slot,item)
     }
     
@@ -61,7 +68,7 @@ abstract class InteractiveInventory {
         return inventory.viewers.size
     }
 
-    // returns true if the given inventory is the same as this inventory
+    // checks if the given inventory is the same as this inventory
     fun isThisInventory(check :Inventory?) : Boolean{
         return check == inventory
     }
@@ -70,10 +77,10 @@ abstract class InteractiveInventory {
     // the inventory under the inventory that they opened
     open fun bottomClickEvent(player : Player, event : InventoryClickEvent){
         val item = event.currentItem ?: return
-        val itemWithoutStackSize = item.clone()
-        itemWithoutStackSize.amount = 1
 
-        if(lockedItems.contains(itemWithoutStackSize)){
+        if(itemIsLocked(item)){
+            // we ignore the shiftClick or Left click event because these can ruin the top inventory from below,
+            // but you can always override it if you don't agree >:)
             if(event.isShiftClick || event.isLeftClick)
                 event.isCancelled = true
         }
@@ -82,9 +89,9 @@ abstract class InteractiveInventory {
     open fun clickEvent(player : Player, event : InventoryClickEvent){
         val item = event.currentItem ?: return
 
-        if(lockedItems.contains(item)){
-            if(clickEvents.containsKey(item)){
-                clickEvents[item]!!.invoke(player)
+        if(itemIsLocked(item)){
+            if(itemHasClickEvent(item)){
+                clickEvents[item.getFactoryID()]!!.invoke(player)
             }
             event.isCancelled = true
         }
@@ -117,12 +124,12 @@ abstract class InteractiveInventory {
     // the inventory acts like normal, you can put items in it and take items out
     // however, you can add and delete items that act like a menu and thus are locked
     // having this cool feature that both locked and non-locked items can co-exist means you can create really cool stuff
-    fun addLockedItem(slot: Int, item:ItemStack, event:((Player) -> Unit)? = null){
+    fun addLockedItem(slot: Int, item:UniqueItemStack, event:((Player) -> Unit)? = null){
         inventory.setItem(slot, item)
-        lockedItems.add(item)
-        if(event != null) clickEvents[item] = event
+        lockedItems.add(item.getFactoryID())
+        if(event != null) clickEvents[item.getFactoryID()] = event
     }
-    fun addLockedItem(row : Int, column : Int, item : ItemStack, event :((Player) -> Unit)? = null){
+    fun addLockedItem(row : Int, column : Int, item : UniqueItemStack, event :((Player) -> Unit)? = null){
         return addLockedItem(row*9 + column, item,event)
     }
 
@@ -140,10 +147,11 @@ abstract class InteractiveInventory {
     }
 
 
-    // this method edits a given item in the inventory, going from the currentItemStack to the newItemStack
-    fun swapItem(currentItemStack : ItemStack, newItemStack : ItemStack){
-        val wasLocked = lockedItems.remove(currentItemStack)
-        val event = clickEvents.remove(currentItemStack)
+    // this method will make sure that all instances from currentItem are swapped with newItem
+    // it will also make sure that if it was locked and if it had an event, that these will be passed along
+    fun swapItem(currentItemStack : UniqueItemStack, newItemStack : UniqueItemStack){
+        val wasLocked = lockedItems.remove(currentItemStack.getFactoryID())
+        val event = clickEvents.remove(currentItemStack.getFactoryID())
 
         for (slot in 0 until inventory.size) {
             if (inventory.getItem(slot) == currentItemStack) {
@@ -151,33 +159,56 @@ abstract class InteractiveInventory {
             }
         }
         if(wasLocked)
-            lockedItems.add(newItemStack)
+            lockedItems.add(newItemStack.getFactoryID())
         if(event != null)
-            clickEvents[newItemStack] = event
+            clickEvents[newItemStack.getFactoryID()] = event
     }
 
-    // don't be confused, this item does not swap the item in that slot only
-    // this method swaps all items that are the same as the one in that slot
-    fun swapItemFromSlot(swapSlot: Int, newItemStack : ItemStack){
-        val currentItemStack = inventory.getItem(swapSlot) ?:  return
-        swapItem(currentItemStack, newItemStack)
+    fun updateItem(updateItem : UniqueItemStack) : Boolean {
+        var anythingDidUpdate = false
+        for (slot in 0 until inventory.size) {
+            val itemInInv = inventory.getItem(slot) ?: continue
+            // we don't have to check for null == null
+            // that's because UniqueItemStack always returns a number
+            // we should have checked this if it where 2 ItemStacks, but that's not the case
+            if(updateItem.getFactoryID() == itemInInv.getFactoryID()){
+                anythingDidUpdate = true
+                inventory.setItem(slot, updateItem)
+            }
+        }
+        return anythingDidUpdate
     }
+
+
 
     // removes the item from the inventory and removing it from the lockedItems list, and also removes its onClick effect
-    fun removeItem(item : ItemStack){
-        lockedItems.remove(item)
-        clickEvents.remove(item)
+    fun removeItem(item : UniqueItemStack){
+        lockedItems.remove(item.getFactoryID())
+        clickEvents.remove(item.getFactoryID())
         for (slot in 0 until inventory.size) {
-            if (inventory.getItem(slot) == item)
+            val itemInInv = inventory.getItem(slot) ?: continue
+            // we don't have to check for null == null
+            // that's because UniqueItemStack always returns a number
+            // we should have checked this if it where 2 ItemStacks, but that's not the case
+            if (itemInInv.getFactoryID() == item.getFactoryID())
                 inventory.clear(slot)
         }
     }
 
-    // don't be confused, this item does not remove the item in that slot only
-    // this method removes all items that are the same as the one in that slot
-    fun removeItemFormSlot(slot: Int){
-        val currentItemStack = inventory.getItem(slot) ?: return
-        removeItem(currentItemStack)
-    }
+    // // don't be confused, this item does not swap the item in that slot only
+    // // this method swaps all items that are the same as the one in that slot
+    // fun swapItemFromSlot(swapSlot: Int, newItemStack : UniqueItemStack){
+    //     val currentItemStack = inventory.getItem(swapSlot) ?: return
+    //     currentItemStack.getFactoryID() ?: return
+    //     swapItem(currentItemStack as UniqueItemStack, newItemStack)
+    // }
+
+    // // don't be confused, this item does not remove the item in that slot only
+    // // this method removes all items that are the same as the one in that slot
+    // fun removeItemFormSlot(slot: Int){
+    //     val currentItemStack = inventory.getItem(slot) ?: return
+    //     currentItemStack.getFactoryID() ?: return
+    //     removeItem(currentItemStack as UniqueItemStack)
+    // }
 
 }

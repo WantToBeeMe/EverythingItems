@@ -18,7 +18,7 @@ object ItemUtil {
         private set
     var title : String? = null
         private set
-    private lateinit var itemNamespaceKey: NamespacedKey
+    lateinit var itemNamespaceKey: NamespacedKey
         private set
 
     // call this in the onEnable method.
@@ -36,39 +36,10 @@ object ItemUtil {
         InteractiveInventorySystem.disablePlugin()
     }
 
-
-    private var currentFactoryID = 0
-    // simple factory method to create itemStacks more easily.
-    // it also makes sure that every itemStack, (if you make it with this factory), that is unique with its own FactoryID
-    // this FactoryID can be retrieved with ItemStack.getFactoryID()
-    fun itemFactory(material: Material, title: String, lore: List<String>?, count: Int, enchanted : Boolean = false): ItemStack {
-        val itemStack = ItemStack(material, count)
-        val itemMeta = itemStack.itemMeta
-        itemMeta?.setDisplayName(title)
-        itemMeta?.persistentDataContainer?.set(itemNamespaceKey, PersistentDataType.INTEGER, currentFactoryID++)
-        itemMeta?.lore = lore
-        itemStack.itemMeta = itemMeta
-        if (enchanted) {
-            itemStack.addUnsafeEnchantment(Enchantment.DURABILITY, 1)
-            val meta = itemStack.itemMeta
-            meta?.addItemFlags(ItemFlag.HIDE_ENCHANTS)
-            itemStack.itemMeta = meta
-        }
-        return itemStack
-    }
-    fun itemFactory(material: Material, title: String, lore: String, enchanted : Boolean = false): ItemStack {
-        return itemFactory(material, title, listOf(lore), 1,enchanted)
-    }
-    fun itemFactory(material: Material, title: String,  lore: List<String>?, enchanted : Boolean = false): ItemStack {
-        return itemFactory(material, title, lore, 1,enchanted)
-    }
-    fun itemFactory(material: Material, title: String, lore: String, count:Int, enchanted : Boolean = false): ItemStack {
-        return itemFactory(material, title, listOf(lore), count,enchanted)
-    }
-
     // items tacks that are created with the factory method provided in ItemUtil, they will contain a FactoryID.
     // This ID can be used to compare items, for example 2 stone itemsStacks may seem indistinguishable,
     // but with this method you can compare the 2 IDs and see that they are actually not the same stack
+    // the UniqueStack also has this method, but this will always return an int instead of sometimes
     fun ItemStack.getFactoryID() : Int?{
         return this
             .itemMeta

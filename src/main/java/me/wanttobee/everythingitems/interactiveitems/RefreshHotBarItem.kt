@@ -1,13 +1,12 @@
 package me.wanttobee.everythingitems.interactiveitems
 
 import me.wanttobee.everythingitems.ItemUtil
-import org.bukkit.inventory.ItemStack
 
 // this is yet another form of an interactive item
 // this refresh item allows for easy refreshing of the items look
 class RefreshHotBarItem : InteractiveHotBarItem() {
     // the effect on the refresh (it doesn't contain any player because fromm the items perspective it's not know who is holding this)
-    private lateinit var refreshMetaEffect : (ItemStack) -> Unit
+    private lateinit var refreshEffect : (RefreshHotBarItem) -> Unit
     // the interval set in ticks (time between refreshes)
     private var refreshInterval = -1
     // the id that corresponds to the scheduler.
@@ -16,8 +15,8 @@ class RefreshHotBarItem : InteractiveHotBarItem() {
 
     // note: if you want to change anything about this item, only changing it to that item won't do enough
     // you will have to make sure you use updateCount(), updateMeta() or updateMaterial()
-    fun setRefreshEffect(effect : (ItemStack) -> Unit) : RefreshHotBarItem {
-        refreshMetaEffect = effect
+    fun setRefreshEffect(effect : (RefreshHotBarItem) -> Unit) : RefreshHotBarItem {
+        refreshEffect = effect
         return this
     }
     // this setting sets how long (in ticks) it takes before this item gets refreshed again
@@ -50,8 +49,8 @@ class RefreshHotBarItem : InteractiveHotBarItem() {
     // this will invoke the refresh effect you provided
     // this method will be used internally every iteration, however its public if you ever want to trigger it yourself
     fun doRefresh(){
-        if(!::refreshMetaEffect.isInitialized) return
-        refreshMetaEffect.invoke(this.itemStack)
+        if(!::refreshEffect.isInitialized) return
+        refreshEffect.invoke(this)
     }
 
     override fun clear() {

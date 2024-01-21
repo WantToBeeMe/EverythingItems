@@ -2,6 +2,7 @@ package me.wanttobee.everythingitems.interactiveitems
 
 import me.wanttobee.everythingitems.ItemUtil
 import me.wanttobee.everythingitems.ItemUtil.getFactoryID
+import me.wanttobee.everythingitems.UniqueItemStack
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -22,13 +23,13 @@ import kotlin.math.min
 // in almost all cases you want to put the super.myMethod() at the end of the override to make it not break
 open class InteractiveHotBarItem {
     // the item that this interactive item is made off (in other words the visuals. The rest is all functional)
-    protected lateinit var itemStack : ItemStack
+    protected lateinit var itemStack : UniqueItemStack
 
-    private lateinit var rightClickEvent : (Player, ItemStack) -> Unit
-    private lateinit var leftClickEvent : (Player, ItemStack) -> Unit
+    private lateinit var rightClickEvent : (Player, UniqueItemStack) -> Unit
+    private lateinit var leftClickEvent : (Player, UniqueItemStack) -> Unit
 
-    private lateinit var dropEvent : (Player, ItemStack) -> Unit
-    private lateinit var swapEvent : (Player, ItemStack) -> Unit
+    private lateinit var dropEvent : (Player, UniqueItemStack) -> Unit
+    private lateinit var swapEvent : (Player, UniqueItemStack) -> Unit
 
     // when you left or right click, will it take 1 off from the count
     private var consumable = false
@@ -50,22 +51,15 @@ open class InteractiveHotBarItem {
         removeFromEveryone()
     }
 
-    // returns a clone of this itemStack.
     // if the items tack is not yet initialized, it throws an error
-    open fun getItem() : ItemStack{
+    open fun getItem() : UniqueItemStack{
         // we could check if its initialized, but we are not going to, that would only postpone the error,
         // so I would rather want the error to happen at the source
-        return itemStack.clone()
+        return itemStack
     }
 
     // changing how the item will look by setting the itemStack (if you modified the meta, this will all be gone if you then run this)
-    open fun setItem(item : ItemStack): InteractiveHotBarItem {
-        if(item.getFactoryID() == null){
-            ItemUtil.minecraftPlugin.logger.warning("The item being set does not have a valid Factory ID. " +
-                    "This probably means that the item wasn't made by one of the factory overloads. " +
-                    "Ignored the setItem request")
-            return this
-        }
+    open fun setItem(item : UniqueItemStack): InteractiveHotBarItem {
         itemStack = item;
         return this
     }
@@ -77,27 +71,27 @@ open class InteractiveHotBarItem {
 
     // note: if you want to change anything about this item, only changing it to that item won't do enough
     // you will have to make sure you use updateCount(), updateMeta() or updateMaterial()
-    open fun setRightClickEvent(event : (Player, ItemStack) -> Unit) : InteractiveHotBarItem {
+    open fun setRightClickEvent(event : (Player, UniqueItemStack) -> Unit) : InteractiveHotBarItem {
         rightClickEvent = event
         return this
     }
     // note: if you want to change anything about this item, only changing it to that item won't do enough
     // you will have to make sure you use updateCount(), updateMeta() or updateMaterial()
-    open fun setLeftClickEvent(event : (Player, ItemStack) -> Unit) : InteractiveHotBarItem {
+    open fun setLeftClickEvent(event : (Player, UniqueItemStack) -> Unit) : InteractiveHotBarItem {
         leftClickEvent = event
         return this
     }
     // note: a little quirk with dropping items is that they for some reason also will trigger the LeftClick
     // note: if you want to change anything about this item, only changing it to that item won't do enough
     // you will have to make sure you use updateCount(), updateMeta() or updateMaterial()
-    open fun setDropEvent(event : (Player, ItemStack) -> Unit): InteractiveHotBarItem {
+    open fun setDropEvent(event : (Player, UniqueItemStack) -> Unit): InteractiveHotBarItem {
         dropEvent = event
         return this
     }
 
     // note: if you want to change anything about this item, only changing it to that item won't do enough
     // you will have to make sure you use updateCount(), updateMeta() or updateMaterial()
-    open fun setSwapEvent(event : (Player, ItemStack) -> Unit): InteractiveHotBarItem {
+    open fun setSwapEvent(event : (Player, UniqueItemStack) -> Unit): InteractiveHotBarItem {
         swapEvent = event
         return this
     }
@@ -168,13 +162,11 @@ open class InteractiveHotBarItem {
     // 2. This also allows use to have seamlessly 2 different looks for the same "item" if we manged to create multiple items tacks with the same ID
     fun isThisItem(i : ItemStack?): Boolean{
         if (!::itemStack.isInitialized) return false
-        if(i == null) return false
-        val iID = i.getFactoryID() ?: return false
-        val itemID = itemStack.getFactoryID() ?: false
-        return iID == itemID
+        return i?.getFactoryID() == itemStack.getFactoryID()
     }
-    // this will remove the item from everyones inventory
-    // but note that it wont remove it from the system, instead call clear() if you want it to also be removed from the system
+
+    // this will remove the item from everyone's inventory
+    // but note that it won't remove it from the system, instead call clear() if you want it to also be removed from the system
     fun removeFromEveryone(){
         for(player in ItemUtil.minecraftPlugin.server.onlinePlayers){
             if(isThisItem(player.inventory.getItem(slot)))

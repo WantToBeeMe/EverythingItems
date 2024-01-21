@@ -1,7 +1,6 @@
 package me.wanttobee.everythingitems.interactiveitems
 
 import me.wanttobee.everythingitems.ItemUtil
-import me.wanttobee.everythingitems.interactiveinventory.InteractiveInventorySystem
 import org.bukkit.ChatColor
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
