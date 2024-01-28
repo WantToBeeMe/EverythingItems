@@ -67,21 +67,17 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         return getUniqueID() == other?.getUniqueID()
     }
 
-    fun updateEverywhere(){
+    fun pushUpdates(){
         for(itemObserver in itemObservers){
             itemObserver.onUniqueItemUpdate(this)
         }
-        // for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
-        //     if(isThisItem( p.inventory.getItem(slot))){
-        //           p.inventory.setItem(slot,this)
-        // }
     }
-    fun clearEverywhere(){
+
+    fun clearItem(){
         for(itemObserver in itemObservers){
             itemObserver.onUniqueItemClear(this)
         }
     }
-
 
     fun updateMeta(newMeta : ItemMeta) : UniqueItemStack{
         val newUniqueID = newMeta.persistentDataContainer.get(ItemUtil.itemNamespaceKey, PersistentDataType.INTEGER)
@@ -90,27 +86,26 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
             return this
 
         this.itemMeta = newMeta
-        updateEverywhere()
         return this
     }
     fun updateTitle(newTitle: String) : UniqueItemStack{
-        val thisMeta = this.itemMeta
-        thisMeta!!.setDisplayName(newTitle)
+        val thisMeta = this.itemMeta!!
+        thisMeta.setDisplayName(newTitle)
         this.itemMeta = thisMeta
         return this
     }
     fun updateLore(newLore: List<String>?) : UniqueItemStack{
-        val thisMeta = this.itemMeta
-        thisMeta!!.lore = newLore
+        val thisMeta = this.itemMeta!!
+        thisMeta.lore = newLore
         this.itemMeta = thisMeta
         return this
     }
     // this will give a glint to the item, without showing the real enchantment that has been applied
     // entering false in this method will remove the enchantment, but also the hide flag so real enchantments can be seen again
     fun updateEnchanted(newEnchanted: Boolean) : UniqueItemStack{
-        val thisMeta = this.itemMeta
-        if(newEnchanted) thisMeta!!.addItemFlags(ItemFlag.HIDE_ENCHANTS)
-        else thisMeta!!.removeItemFlags(ItemFlag.HIDE_ENCHANTS)
+        val thisMeta = this.itemMeta!!
+        if(newEnchanted) thisMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+        else thisMeta.removeItemFlags(ItemFlag.HIDE_ENCHANTS)
         this.itemMeta = thisMeta
 
         if(newEnchanted) addUnsafeEnchantment(Enchantment.DURABILITY, 1)
@@ -120,15 +115,10 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
     }
     fun updateMaterial(newMaterial: Material) : UniqueItemStack{
         this.type = newMaterial
-        updateEverywhere()
         return this
     }
     fun updateCount(newAmount: Int) : UniqueItemStack{
         this.amount = newAmount
-        if(newAmount <= 0)
-            clearEverywhere()
-        else
-            updateEverywhere()
         return this
     }
     fun increaseCount(steps : Int = 1) : UniqueItemStack{

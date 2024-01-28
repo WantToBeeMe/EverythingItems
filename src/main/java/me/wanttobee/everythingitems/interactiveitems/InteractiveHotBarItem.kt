@@ -6,7 +6,6 @@ import me.wanttobee.everythingitems.UniqueItemStack
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ItemMeta
 import kotlin.math.min
 
 // so some background information on how this works
@@ -149,8 +148,8 @@ open class InteractiveHotBarItem(
     // we only check if the id is the same, this has 2 benefits.
     // 1. The ID is always unique, so we are 100% sure that it is this item when we do it like this
     // 2. This also allows use to have seamlessly 2 different looks for the same "item" if we manged to create multiple items tacks with the same ID
-    fun isThisItem(i : ItemStack?): Boolean{
-        return itemStack.equalsID(i)
+    fun isThisItem(other : ItemStack?): Boolean{
+        return itemStack.equalsID(other)
     }
 
     // this will remove the item from everyone's inventory
@@ -171,33 +170,12 @@ open class InteractiveHotBarItem(
         return usageAmount
     }
 
-    fun updateMeta(newMeta : ItemMeta){
-        itemStack.updateMeta(newMeta)
-        // the item will be replaced with the new item in the update callback
-    }
-    fun updateMaterial(newMaterial: Material){
-        itemStack.updateMaterial(newMaterial)
-        // the item will be replaced with the new item in the update callback
-    }
-    fun updateTitle(newTitle: String){
-        itemStack.updateTitle(newTitle)
-        // the item will be replaced with the new item in the update callback
-    }
-    fun updateLore(newLore: List<String>?){
-        itemStack.updateLore(newLore)
-        // the item will be replaced with the new item in the update callback
-    }
-    fun updateEnchanted(enchanted: Boolean){
-        itemStack.updateEnchanted(enchanted)
-        // the item will be replaced with the new item in the update callback
-    }
-
     fun updateCount(newAmount: Int){
         var newAmount = newAmount
         if(countUpCap > 0 && newAmount > countUpCap){
             newAmount = countStepSize
         }
-        itemStack.updateCount(newAmount)
+        itemStack.updateCount(newAmount).pushUpdates()
         // the item will be replaced with the new item in the update callback
     }
 
