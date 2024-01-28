@@ -150,8 +150,9 @@ abstract class InteractiveInventory {
     // this method will make sure that all instances from currentItem are swapped with newItem
     // it will also make sure that if it was locked and if it had an event, that these will be passed along
     fun swapItem(currentItemStack : UniqueItemStack, newItemStack : UniqueItemStack){
-        val wasLocked = lockedItems.remove(currentItemStack.getFactoryID())
-        val event = clickEvents.remove(currentItemStack.getFactoryID())
+        val isSeparator = currentItemStack.getFactoryID() == separator.getFactoryID()
+        val wasLocked = if(isSeparator) true else lockedItems.remove(currentItemStack.getFactoryID())
+        val event = if(isSeparator) null else clickEvents.remove(currentItemStack.getFactoryID())
 
         for (slot in 0 until inventory.size) {
             if (inventory.getItem(slot) == currentItemStack) {
@@ -183,8 +184,11 @@ abstract class InteractiveInventory {
 
     // removes the item from the inventory and removing it from the lockedItems list, and also removes its onClick effect
     fun removeItem(item : UniqueItemStack){
-        lockedItems.remove(item.getFactoryID())
-        clickEvents.remove(item.getFactoryID())
+        val isSeparator = item.getFactoryID() == separator.getFactoryID()
+        if(isSeparator){
+            lockedItems.remove(item.getFactoryID())
+            clickEvents.remove(item.getFactoryID())
+        }
         for (slot in 0 until inventory.size) {
             val itemInInv = inventory.getItem(slot) ?: continue
             // we don't have to check for null == null
