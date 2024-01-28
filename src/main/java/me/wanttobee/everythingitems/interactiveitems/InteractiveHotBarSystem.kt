@@ -49,6 +49,9 @@ object InteractiveHotBarSystem : Listener {
     fun onHotBarClick(event: InventoryClickEvent) {
         // we cancel this event if it is done by one of the Interactive items
         // we don't allow for these hot bar items to be changed in your inventory menu
+        val player = event.whoClicked as? Player ?: return
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val item = event.currentItem ?: return
         for(hotBarItem in hotBarItems) {
             if (hotBarItem.isThisItem(item)) {
@@ -62,6 +65,9 @@ object InteractiveHotBarSystem : Listener {
     fun onHotBarDrag(event: InventoryDragEvent) {
         // we cancel this event if it is done by one of the Interactive items
         // we don't allow for these items to be dragged
+        val player = event.whoClicked as? Player ?: return
+        if (player.gameMode == GameMode.CREATIVE) return
+
         val item = event.cursor ?: return
         for(hotBarItem in hotBarItems) {
             if (hotBarItem.isThisItem(item)) {
