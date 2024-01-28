@@ -1,14 +1,13 @@
 package me.wanttobee.everythingitems.interactiveinventory
 
-import me.wanttobee.everythingitems.ItemUtil.getFactoryID
+import me.wanttobee.everythingitems.IUniqueItemObserver
+import me.wanttobee.everythingitems.ItemUtil.getUniqueID
 import me.wanttobee.everythingitems.UniqueItemStack
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
-import org.bukkit.event.inventory.InventoryType
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 
@@ -18,7 +17,7 @@ import org.bukkit.inventory.ItemStack
 // if you want to make some more complex inventories, you might want to change things up a bit, that's why a lot of the methods are overrideable
 // for example, you might want to create a build pallet menu, that would require you to make it, so you can put items in and out
 // so you might want to override the bottomClickEvent to clone the item you clicked and put a stack of size 1 in the first slot of the pallet. go wild with it
-abstract class InteractiveInventory {
+abstract class InteractiveInventory : IUniqueItemObserver{
     companion object{
         // the separator is a black pane glass which is just the default separator. nothing special
         // in theory you could use any itemStack here
@@ -26,10 +25,12 @@ abstract class InteractiveInventory {
     }
 
     init{
+        separator.subscribe(this)
         InteractiveInventorySystem.addInventory(this)
     }
 
     open fun clear(){
+        separator.unsubscribe(this)
         closeViewers()
         InteractiveInventorySystem.removeInventory(this)
     }
@@ -37,17 +38,17 @@ abstract class InteractiveInventory {
     protected abstract var inventory: Inventory
     // we made sure you can only set locks and give click event to Unique items, we don't have to save the whole item anymore
     // instead we can just save their ID's.
-    protected val lockedItems : MutableSet<Int> = mutableSetOf(separator.getFactoryID())
+    protected val lockedItems : MutableSet<Int> = mutableSetOf(separator.getUniqueID())
     protected val clickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
 
     fun itemIsLocked(item : ItemStack) : Boolean{
         return lockedItems.contains(
-            item.getFactoryID() ?: return false
+            item.getUniqueID() ?: return false
         )
     }
     fun itemHasClickEvent(item : ItemStack) : Boolean{
         return clickEvents.containsKey(
-            item.getFactoryID() ?: return false
+            item.getUniqueID() ?: return false
         )
     }
 
@@ -85,13 +86,14 @@ abstract class InteractiveInventory {
                 event.isCancelled = true
         }
     }
+
     // this method gets called whenever a player clicks on this inventory
     open fun clickEvent(player : Player, event : InventoryClickEvent){
         val item = event.currentItem ?: return
 
         if(itemIsLocked(item)){
             if(itemHasClickEvent(item)){
-                clickEvents[item.getFactoryID()]!!.invoke(player)
+                clickEvents[item.getUniqueID()]!!.invoke(player)
             }
             event.isCancelled = true
         }
@@ -100,6 +102,7 @@ abstract class InteractiveInventory {
     // this method gets called whenever a player drags in its own inventory
     // the inventory under the inventory that they opened
     open fun bottomDragEvent(player : Player, event: InventoryDragEvent){}
+
     // this method gets called whenever a player drags in this inventory
     open fun dragEvent(player : Player, event: InventoryDragEvent){}
 
@@ -110,6 +113,7 @@ abstract class InteractiveInventory {
     fun open(player : Player){
         player.openInventory(inventory)
     }
+
     // closes this inventory for everyone currently look in this inventory
     fun closeViewers(){
         for (viewerID in inventory.viewers.indices) {
@@ -124,10 +128,11 @@ abstract class InteractiveInventory {
     // the inventory acts like normal, you can put items in it and take items out
     // however, you can add and delete items that act like a menu and thus are locked
     // having this cool feature that both locked and non-locked items can co-exist means you can create really cool stuff
-    fun addLockedItem(slot: Int, item:UniqueItemStack, event:((Player) -> Unit)? = null){
+    fun addLockedItem(slot: Int, item : UniqueItemStack, event:((Player) -> Unit)? = null){
         inventory.setItem(slot, item)
-        lockedItems.add(item.getFactoryID())
-        if(event != null) clickEvents[item.getFactoryID()] = event
+        lockedItems.add(item.getUniqueID())
+        item.subscribe(this) // we want to know whenever the item updates, so we can act on that
+        if(event != null) clickEvents[item.getUniqueID()] = event
     }
     fun addLockedItem(row : Int, column : Int, item : UniqueItemStack, event :((Player) -> Unit)? = null){
         return addLockedItem(row*9 + column, item,event)
@@ -150,9 +155,9 @@ abstract class InteractiveInventory {
     // this method will make sure that all instances from currentItem are swapped with newItem
     // it will also make sure that if it was locked and if it had an event, that these will be passed along
     fun swapItem(currentItemStack : UniqueItemStack, newItemStack : UniqueItemStack){
-        val isSeparator = currentItemStack.getFactoryID() == separator.getFactoryID()
-        val wasLocked = if(isSeparator) true else lockedItems.remove(currentItemStack.getFactoryID())
-        val event = if(isSeparator) null else clickEvents.remove(currentItemStack.getFactoryID())
+        val isSeparator = separator.equalsID(currentItemStack)
+        val wasLocked = if(isSeparator) true else lockedItems.remove(currentItemStack.getUniqueID())
+        val event = clickEvents.remove(currentItemStack.getUniqueID())
 
         for (slot in 0 until inventory.size) {
             if (inventory.getItem(slot) == currentItemStack) {
@@ -160,59 +165,54 @@ abstract class InteractiveInventory {
             }
         }
         if(wasLocked)
-            lockedItems.add(newItemStack.getFactoryID())
+            lockedItems.add(newItemStack.getUniqueID())
         if(event != null)
-            clickEvents[newItemStack.getFactoryID()] = event
+            clickEvents[newItemStack.getUniqueID()] = event
+
+        currentItemStack.unsubscribe(this)
+        newItemStack.subscribe(this)
     }
 
-    fun updateItem(updateItem : UniqueItemStack) : Boolean {
-        var anythingDidUpdate = false
-        for (slot in 0 until inventory.size) {
-            val itemInInv = inventory.getItem(slot) ?: continue
-            // we don't have to check for null == null
-            // that's because UniqueItemStack always returns a number
-            // we should have checked this if it where 2 ItemStacks, but that's not the case
-            if(updateItem.getFactoryID() == itemInInv.getFactoryID()){
-                anythingDidUpdate = true
-                inventory.setItem(slot, updateItem)
-            }
-        }
-        return anythingDidUpdate
-    }
-
-
-
-    // removes the item from the inventory and removing it from the lockedItems list, and also removes its onClick effect
+    // removes the item from the inventory
+    // and removing it from the lockedItems list
+    // and also removes its onClick effect
     fun removeItem(item : UniqueItemStack){
-        val isSeparator = item.getFactoryID() == separator.getFactoryID()
-        if(isSeparator){
-            lockedItems.remove(item.getFactoryID())
-            clickEvents.remove(item.getFactoryID())
-        }
+        val isSeparator = separator.equalsID(item)
+        if(!isSeparator) lockedItems.remove(item.getUniqueID())
+        clickEvents.remove(item.getUniqueID())
+
         for (slot in 0 until inventory.size) {
             val itemInInv = inventory.getItem(slot) ?: continue
-            // we don't have to check for null == null
-            // that's because UniqueItemStack always returns a number
-            // we should have checked this if it where 2 ItemStacks, but that's not the case
-            if (itemInInv.getFactoryID() == item.getFactoryID())
+            if (item.equalsID(itemInInv))
                 inventory.clear(slot)
         }
+        if(!isSeparator) item.unsubscribe(this)
     }
 
-    // // don't be confused, this item does not swap the item in that slot only
-    // // this method swaps all items that are the same as the one in that slot
-    // fun swapItemFromSlot(swapSlot: Int, newItemStack : UniqueItemStack){
-    //     val currentItemStack = inventory.getItem(swapSlot) ?: return
-    //     currentItemStack.getFactoryID() ?: return
-    //     swapItem(currentItemStack as UniqueItemStack, newItemStack)
-    // }
-
-    // // don't be confused, this item does not remove the item in that slot only
-    // // this method removes all items that are the same as the one in that slot
-    // fun removeItemFormSlot(slot: Int){
-    //     val currentItemStack = inventory.getItem(slot) ?: return
-    //     currentItemStack.getFactoryID() ?: return
-    //     removeItem(currentItemStack as UniqueItemStack)
-    // }
-
+    override fun onUniqueItemUpdate(item: UniqueItemStack) {
+        for (slot in 0 until inventory.size) {
+            val itemInInv = inventory.getItem(slot) ?: continue
+            if(item.equalsID(itemInInv))
+                inventory.setItem(slot, item)
+        }
+    }
+    override fun onUniqueItemClear(item: UniqueItemStack) {
+        // if the item gets cleared, we don't want to do anything else other than just removing it from the inventory
+        removeItem(item)
+    }
 }
+
+// fun updateItem(updateItem : UniqueItemStack) : Boolean {
+//     var anythingDidUpdate = false
+//     for (slot in 0 until inventory.size) {
+//         val itemInInv = inventory.getItem(slot) ?: continue
+//         // we don't have to check for null == null
+//         // that's because UniqueItemStack always returns a number
+//         // we should have checked this if it where 2 ItemStacks, but that's not the case
+//         if(updateItem.getUniqueID() == itemInInv.getUniqueID()){
+//             anythingDidUpdate = true
+//             inventory.setItem(slot, updateItem)
+//         }
+//     }
+//     return anythingDidUpdate
+// }

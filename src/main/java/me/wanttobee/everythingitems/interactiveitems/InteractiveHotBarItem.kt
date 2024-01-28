@@ -1,7 +1,7 @@
 package me.wanttobee.everythingitems.interactiveitems
 
+import me.wanttobee.everythingitems.IUniqueItemObserver
 import me.wanttobee.everythingitems.ItemUtil
-import me.wanttobee.everythingitems.ItemUtil.getFactoryID
 import me.wanttobee.everythingitems.UniqueItemStack
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -21,9 +21,10 @@ import kotlin.math.min
 // a lot of methods are open just so you can override them. that does not mean you should though
 // I just don't want to ruin your freedom once this is a library, and you can't change the source code
 // in almost all cases you want to put the super.myMethod() at the end of the override to make it not break
-open class InteractiveHotBarItem {
-    // the item that this interactive item is made off (in other words the visuals. The rest is all functional)
-    protected lateinit var itemStack : UniqueItemStack
+open class InteractiveHotBarItem(
+    // the itemStack is only the visuals, the rest is all functionality
+    val itemStack : UniqueItemStack
+) : IUniqueItemObserver {
 
     private lateinit var rightClickEvent : (Player, UniqueItemStack) -> Unit
     private lateinit var leftClickEvent : (Player, UniqueItemStack) -> Unit
@@ -39,6 +40,7 @@ open class InteractiveHotBarItem {
         private set
 
     init{
+        itemStack.subscribe(this)
         InteractiveHotBarSystem.addItem(this)
     }
 
@@ -47,21 +49,9 @@ open class InteractiveHotBarItem {
     // however, if a player leaves, that is not, so they will join again with a broken item.
     // the item they contain is just a normal item by then and won't work anymore
     open fun clear(){
+        itemStack.unsubscribe(this)
         InteractiveHotBarSystem.removeItem(this)
         removeFromEveryone()
-    }
-
-    // if the items tack is not yet initialized, it throws an error
-    open fun getItem() : UniqueItemStack{
-        // we could check if its initialized, but we are not going to, that would only postpone the error,
-        // so I would rather want the error to happen at the source
-        return itemStack
-    }
-
-    // changing how the item will look by setting the itemStack (if you modified the meta, this will all be gone if you then run this)
-    open fun setItem(item : UniqueItemStack): InteractiveHotBarItem {
-        itemStack = item;
-        return this
     }
 
     // I don't have tested it, and I am not planning on it because the solution would be cloning which I don't like because it will potentially be a performance hit
@@ -131,7 +121,6 @@ open class InteractiveHotBarItem {
     // this will give the item to the player. any modification will still apply to this item.
     // however, keep in mind, that it will enter the that you can provide with setSlot()
     fun giveToPlayer(p : Player){
-        if (!::itemStack.isInitialized) return
         p.inventory.setItem(slot, itemStack)
     }
 
@@ -161,68 +150,73 @@ open class InteractiveHotBarItem {
     // 1. The ID is always unique, so we are 100% sure that it is this item when we do it like this
     // 2. This also allows use to have seamlessly 2 different looks for the same "item" if we manged to create multiple items tacks with the same ID
     fun isThisItem(i : ItemStack?): Boolean{
-        if (!::itemStack.isInitialized) return false
-        return i?.getFactoryID() == itemStack.getFactoryID()
+        return itemStack.equalsID(i)
     }
 
     // this will remove the item from everyone's inventory
     // but note that it won't remove it from the system, instead call clear() if you want it to also be removed from the system
     fun removeFromEveryone(){
         for(player in ItemUtil.minecraftPlugin.server.onlinePlayers){
-            if(isThisItem(player.inventory.getItem(slot)))
+            if(isThisItem(player.inventory.getItem(slot))) // we only have to check for the slot we set it to, the item should be in that slot anyway
                 player.inventory.setItem(slot, ItemStack(Material.AIR))
         }
     }
 
     fun getUsageCount() : Int{
-        var amount  = 0
+        var usageAmount = 0
         for(player in ItemUtil.minecraftPlugin.server.onlinePlayers){
             if(isThisItem(player.inventory.getItem(slot)))
-                amount++
+                usageAmount++
         }
-        return amount
+        return usageAmount
     }
-
 
     fun updateMeta(newMeta : ItemMeta){
-        for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
-            if(isThisItem( p.inventory.getItem(slot)))
-                p.inventory.getItem(slot)!!.itemMeta = newMeta
-        }
-        itemStack.itemMeta = newMeta
+        itemStack.updateMeta(newMeta)
+        // the item will be replaced with the new item in the update callback
     }
     fun updateMaterial(newMaterial: Material){
-        for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
-            if(isThisItem( p.inventory.getItem(slot)))
-                p.inventory.getItem(slot)!!.type = newMaterial
-        }
-        itemStack.type = newMaterial
+        itemStack.updateMaterial(newMaterial)
+        // the item will be replaced with the new item in the update callback
     }
+    fun updateTitle(newTitle: String){
+        itemStack.updateTitle(newTitle)
+        // the item will be replaced with the new item in the update callback
+    }
+    fun updateLore(newLore: List<String>?){
+        itemStack.updateLore(newLore)
+        // the item will be replaced with the new item in the update callback
+    }
+    fun updateEnchanted(enchanted: Boolean){
+        itemStack.updateEnchanted(enchanted)
+        // the item will be replaced with the new item in the update callback
+    }
+
     fun updateCount(newAmount: Int){
-        if (!::itemStack.isInitialized) return
-        if(newAmount <= 0) {
-            clear()
-            return
-        }
         var newAmount = newAmount
         if(countUpCap > 0 && newAmount > countUpCap){
             newAmount = countStepSize
         }
-        for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
-            if(isThisItem( p.inventory.getItem(slot)))
-                p.inventory.getItem(slot)!!.amount = newAmount
-        }
-        itemStack.amount = newAmount
+        itemStack.updateCount(newAmount)
+        // the item will be replaced with the new item in the update callback
     }
 
     protected fun increaseCount(stepSize : Int = 1){
-        if (!::itemStack.isInitialized) return
-        val old = itemStack.amount
-        updateCount(old + stepSize)
+        updateCount(itemStack.amount + stepSize)
     }
     protected fun decreaseCount(stepSize : Int = 1){
-        if (!::itemStack.isInitialized) return
-        val old = itemStack.amount
-        updateCount(old - stepSize)
+        updateCount(itemStack.amount - stepSize)
+    }
+
+    override fun onUniqueItemUpdate(item: UniqueItemStack) {
+        for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
+            if( isThisItem( p.inventory.getItem(slot) ) ){
+                p.inventory.setItem(slot, item)
+            }
+        }
+    }
+
+    override fun onUniqueItemClear(item: UniqueItemStack) {
+        clear()
     }
 }

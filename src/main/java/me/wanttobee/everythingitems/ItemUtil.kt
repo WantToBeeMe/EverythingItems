@@ -5,8 +5,6 @@ import me.wanttobee.everythingitems.interactiveitems.InteractiveHotBarSystem
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.enchantments.Enchantment
-import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
@@ -40,7 +38,7 @@ object ItemUtil {
     // This ID can be used to compare items, for example 2 stone itemsStacks may seem indistinguishable,
     // but with this method you can compare the 2 IDs and see that they are actually not the same stack
     // the UniqueStack also has this method, but this will always return an int instead of sometimes
-    fun ItemStack.getFactoryID() : Int?{
+    fun ItemStack.getUniqueID() : Int?{
         return this
             .itemMeta
             ?.persistentDataContainer

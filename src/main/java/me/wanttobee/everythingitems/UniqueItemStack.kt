@@ -1,9 +1,11 @@
 package me.wanttobee.everythingitems
 
+import me.wanttobee.everythingitems.ItemUtil.getUniqueID
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.persistence.PersistentDataType
 
 // a UniqueItemStack is like any other item stack
@@ -20,6 +22,20 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
     companion object{
         // this factory ID will be increased everytime a UniqueItemStack has been made to ensure that every stack is unique
         private var currentFactoryID = 0
+    }
+
+    // TODO:
+    //  if it turns out that cloning this list on each update call will result in lag, a solution could be
+    //  to instead not clone observers list, and instead have a boolean indicating if we can (un)subscribe
+    //  and if this is true we (un)subscribe like normal, and if its false, we instead add the (un)subscribe request to a buffer
+    //  then whenever the boolean is set from false to true again, we then go through the buffer and apply the changes
+    //  This would be a lot more effort to code, but would be more efficient
+    private val itemObservers : MutableSet<IUniqueItemObserver> = mutableSetOf()
+    fun subscribe(observer: IUniqueItemObserver) : Boolean{
+        return itemObservers.add(observer)
+    }
+    fun unsubscribe(observer: IUniqueItemObserver) : Boolean{
+        return itemObservers.remove(observer)
     }
 
     init{
@@ -43,8 +59,90 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
 
     // This ID can be used to compare items, for example 2 stone itemsStacks may seem indistinguishable,
     // but with this method you can compare the 2 IDs and see that they are actually not the same stack
-    fun getFactoryID() : Int{
+    fun getUniqueID() : Int{
           return this.itemMeta!!.persistentDataContainer
              .get(ItemUtil.itemNamespaceKey, PersistentDataType.INTEGER)!!
+    }
+    fun equalsID(other : ItemStack?) : Boolean{
+        return getUniqueID() == other?.getUniqueID()
+    }
+
+    fun updateEverywhere(){
+        for(itemObserver in itemObservers){
+            itemObserver.onUniqueItemUpdate(this)
+        }
+        // for(p in ItemUtil.minecraftPlugin.server.onlinePlayers){
+        //     if(isThisItem( p.inventory.getItem(slot))){
+        //           p.inventory.setItem(slot,this)
+        // }
+    }
+    fun clearEverywhere(){
+        for(itemObserver in itemObservers){
+            itemObserver.onUniqueItemClear(this)
+        }
+    }
+
+
+    fun updateMeta(newMeta : ItemMeta) : UniqueItemStack{
+        val newUniqueID = newMeta.persistentDataContainer.get(ItemUtil.itemNamespaceKey, PersistentDataType.INTEGER)
+        // we are not going to update the meta if the new ID is not the same
+        if(newUniqueID != this.getUniqueID())
+            return this
+
+        this.itemMeta = newMeta
+        updateEverywhere()
+        return this
+    }
+    fun updateTitle(newTitle: String) : UniqueItemStack{
+        val thisMeta = this.itemMeta
+        thisMeta!!.setDisplayName(newTitle)
+        this.itemMeta = thisMeta
+        return this
+    }
+    fun updateLore(newLore: List<String>?) : UniqueItemStack{
+        val thisMeta = this.itemMeta
+        thisMeta!!.lore = newLore
+        this.itemMeta = thisMeta
+        return this
+    }
+    // this will give a glint to the item, without showing the real enchantment that has been applied
+    // entering false in this method will remove the enchantment, but also the hide flag so real enchantments can be seen again
+    fun updateEnchanted(newEnchanted: Boolean) : UniqueItemStack{
+        val thisMeta = this.itemMeta
+        if(newEnchanted) thisMeta!!.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+        else thisMeta!!.removeItemFlags(ItemFlag.HIDE_ENCHANTS)
+        this.itemMeta = thisMeta
+
+        if(newEnchanted) addUnsafeEnchantment(Enchantment.DURABILITY, 1)
+        else removeEnchantment(Enchantment.DURABILITY)
+
+        return this
+    }
+    fun updateMaterial(newMaterial: Material) : UniqueItemStack{
+        this.type = newMaterial
+        updateEverywhere()
+        return this
+    }
+    fun updateCount(newAmount: Int) : UniqueItemStack{
+        this.amount = newAmount
+        if(newAmount <= 0)
+            clearEverywhere()
+        else
+            updateEverywhere()
+        return this
+    }
+    fun increaseCount(steps : Int = 1) : UniqueItemStack{
+        return updateCount(this.amount+ steps)
+    }
+    fun decreaseCount(steps : Int = 1) : UniqueItemStack{
+        return updateCount(this.amount - steps)
+    }
+
+    // these are the exact same as the methods, however they are easier to write :P
+    operator fun dec() : UniqueItemStack {
+        return decreaseCount()
+    }
+    operator fun inc() : UniqueItemStack {
+        return increaseCount()
     }
 }
