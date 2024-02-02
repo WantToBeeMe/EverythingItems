@@ -40,8 +40,8 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     // we made sure you can only set locks and give click event to Unique items, we don't have to save the whole item anymore
     // instead we can just save their ID's.
     protected val lockedItems : MutableSet<Int> = mutableSetOf(separator.getUniqueID())
-    protected val leftClickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
-    protected val rightClickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
+    protected val leftClickEvents : MutableMap<Int, (Player, Boolean) -> Unit> = mutableMapOf()
+    protected val rightClickEvents : MutableMap<Int, (Player, Boolean) -> Unit> = mutableMapOf()
 
     fun itemIsLocked(item : ItemStack) : Boolean{
         return lockedItems.contains(
@@ -101,10 +101,10 @@ abstract class InteractiveInventory : IUniqueItemObserver{
         if(itemIsLocked(item)){
             val click = event.click
             if(click.isLeftClick && itemHasLeftClickEvent(item) ){
-                leftClickEvents[item.getUniqueID()]!!.invoke(player)
+                leftClickEvents[item.getUniqueID()]!!.invoke(player, click.isShiftClick)
             }
             else if(click.isRightClick && itemHasRightClickEvent(item)){
-                rightClickEvents[item.getUniqueID()]!!.invoke(player)
+                rightClickEvents[item.getUniqueID()]!!.invoke(player, click.isShiftClick)
             }
             event.isCancelled = true
         }
@@ -139,7 +139,7 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     // the inventory acts like normal, you can put items in it and take items out
     // however, you can add and delete items that act like a menu and thus are locked
     // having this cool feature that both locked and non-locked items can co-exist means you can create really cool stuff
-    fun addLockedItem(slot: Int, item : UniqueItemStack, event:((Player) -> Unit)? = null){
+    fun addLockedItem(slot: Int, item : UniqueItemStack, event:((Player,Boolean) -> Unit)? = null){
         inventory.setItem(slot, item)
         lockedItems.add(item.getUniqueID())
         item.subscribe(this) // we want to know whenever the item updates, so we can act on that
@@ -149,7 +149,7 @@ abstract class InteractiveInventory : IUniqueItemObserver{
             rightClickEvents[item.getUniqueID()] = event
         }
     }
-    fun addLockedItem(slot: Int, item : UniqueItemStack, leftClickEvent:((Player) -> Unit)?, rightClickEvent:((Player) -> Unit)?){
+    fun addLockedItem(slot: Int, item : UniqueItemStack, leftClickEvent:((Player, Boolean) -> Unit)?, rightClickEvent:((Player, Boolean) -> Unit)?){
         inventory.setItem(slot, item)
         lockedItems.add(item.getUniqueID())
         item.subscribe(this) // we want to know whenever the item updates, so we can act on that
