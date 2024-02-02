@@ -5,6 +5,7 @@ import me.wanttobee.everythingitems.ItemUtil.getUniqueID
 import me.wanttobee.everythingitems.UniqueItemStack
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
@@ -39,15 +40,21 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     // we made sure you can only set locks and give click event to Unique items, we don't have to save the whole item anymore
     // instead we can just save their ID's.
     protected val lockedItems : MutableSet<Int> = mutableSetOf(separator.getUniqueID())
-    protected val clickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
+    protected val leftClickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
+    protected val rightClickEvents : MutableMap<Int, (Player) -> Unit> = mutableMapOf()
 
     fun itemIsLocked(item : ItemStack) : Boolean{
         return lockedItems.contains(
             item.getUniqueID() ?: return false
         )
     }
-    fun itemHasClickEvent(item : ItemStack) : Boolean{
-        return clickEvents.containsKey(
+    fun itemHasLeftClickEvent(item : ItemStack) : Boolean{
+        return leftClickEvents.containsKey(
+            item.getUniqueID() ?: return false
+        )
+    }
+    fun itemHasRightClickEvent(item : ItemStack) : Boolean{
+        return rightClickEvents.containsKey(
             item.getUniqueID() ?: return false
         )
     }
@@ -92,8 +99,12 @@ abstract class InteractiveInventory : IUniqueItemObserver{
         val item = event.currentItem ?: return
 
         if(itemIsLocked(item)){
-            if(itemHasClickEvent(item)){
-                clickEvents[item.getUniqueID()]!!.invoke(player)
+            val click = event.click
+            if(click.isLeftClick && itemHasLeftClickEvent(item) ){
+                leftClickEvents[item.getUniqueID()]!!.invoke(player)
+            }
+            else if(click.isRightClick && itemHasRightClickEvent(item)){
+                rightClickEvents[item.getUniqueID()]!!.invoke(player)
             }
             event.isCancelled = true
         }
@@ -132,11 +143,20 @@ abstract class InteractiveInventory : IUniqueItemObserver{
         inventory.setItem(slot, item)
         lockedItems.add(item.getUniqueID())
         item.subscribe(this) // we want to know whenever the item updates, so we can act on that
-        if(event != null) clickEvents[item.getUniqueID()] = event
+        if(event != null) {
+            // if we specify only 1 event, that means it will happen at both occasions
+            leftClickEvents[item.getUniqueID()] = event
+            rightClickEvents[item.getUniqueID()] = event
+        }
     }
-    fun addLockedItem(row : Int, column : Int, item : UniqueItemStack, event :((Player) -> Unit)? = null){
-        return addLockedItem(row*9 + column, item,event)
+    fun addLockedItem(slot: Int, item : UniqueItemStack, leftClickEvent:((Player) -> Unit)?, rightClickEvent:((Player) -> Unit)?){
+        inventory.setItem(slot, item)
+        lockedItems.add(item.getUniqueID())
+        item.subscribe(this) // we want to know whenever the item updates, so we can act on that
+        if(leftClickEvent != null) leftClickEvents[item.getUniqueID()] = leftClickEvent
+        if(rightClickEvent != null) rightClickEvents[item.getUniqueID()] = rightClickEvent
     }
+
 
     // fills al the empty slots with the separator so that there are no more empty slots left
     fun fillGapsWithSeparator(){
@@ -157,7 +177,8 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     fun swapItem(currentItemStack : UniqueItemStack, newItemStack : UniqueItemStack){
         val isSeparator = separator.equalsID(currentItemStack)
         val wasLocked = if(isSeparator) true else lockedItems.remove(currentItemStack.getUniqueID())
-        val event = clickEvents.remove(currentItemStack.getUniqueID())
+        val leftEvent = leftClickEvents.remove(currentItemStack.getUniqueID())
+        val rightEvent = rightClickEvents.remove(currentItemStack.getUniqueID())
 
         for (slot in 0 until inventory.size) {
             if (inventory.getItem(slot) == currentItemStack) {
@@ -166,9 +187,8 @@ abstract class InteractiveInventory : IUniqueItemObserver{
         }
         if(wasLocked)
             lockedItems.add(newItemStack.getUniqueID())
-        if(event != null)
-            clickEvents[newItemStack.getUniqueID()] = event
-
+        if(leftEvent != null) leftClickEvents[newItemStack.getUniqueID()] = leftEvent
+        if(rightEvent != null) rightClickEvents[newItemStack.getUniqueID()] = rightEvent
         currentItemStack.unsubscribe(this)
         newItemStack.subscribe(this)
     }
@@ -179,7 +199,8 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     fun removeItem(item : UniqueItemStack){
         val isSeparator = separator.equalsID(item)
         if(!isSeparator) lockedItems.remove(item.getUniqueID())
-        clickEvents.remove(item.getUniqueID())
+        leftClickEvents.remove(item.getUniqueID())
+        rightClickEvents.remove(item.getUniqueID())
 
         for (slot in 0 until inventory.size) {
             val itemInInv = inventory.getItem(slot) ?: continue
@@ -201,18 +222,3 @@ abstract class InteractiveInventory : IUniqueItemObserver{
         removeItem(item)
     }
 }
-
-// fun updateItem(updateItem : UniqueItemStack) : Boolean {
-//     var anythingDidUpdate = false
-//     for (slot in 0 until inventory.size) {
-//         val itemInInv = inventory.getItem(slot) ?: continue
-//         // we don't have to check for null == null
-//         // that's because UniqueItemStack always returns a number
-//         // we should have checked this if it where 2 ItemStacks, but that's not the case
-//         if(updateItem.getUniqueID() == itemInInv.getUniqueID()){
-//             anythingDidUpdate = true
-//             inventory.setItem(slot, updateItem)
-//         }
-//     }
-//     return anythingDidUpdate
-// }
