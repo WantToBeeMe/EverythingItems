@@ -9,6 +9,7 @@ import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 
@@ -119,6 +120,9 @@ abstract class InteractiveInventory : IUniqueItemObserver{
 
     // whenever a player closes this inventory, this will be called
     open fun closeEvent(player : Player, event : InventoryCloseEvent){}
+
+    // whenever a player opens this inventory, this will be called
+    open fun openEvent(player : Player, event : InventoryOpenEvent){}
 
     // opens the inventory to the specified player
     fun open(player : Player){

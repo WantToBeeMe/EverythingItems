@@ -9,6 +9,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryDragEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
 
 object InteractiveInventorySystem : Listener {
     private val inventories : MutableList<InteractiveInventory> = mutableListOf()
@@ -69,6 +70,18 @@ object InteractiveInventorySystem : Listener {
         for (inv in inventories) {
             if (inv.isThisInventory(clickedInventory)) {
                 inv.closeEvent(player, event)
+                return
+            }
+        }
+    }
+    @EventHandler
+    fun onInventoryOpen(event: InventoryOpenEvent) {
+        val clickedInventory = event.inventory
+        val player = event.player as? Player ?: return
+
+        for (inv in inventories) {
+            if (inv.isThisInventory(clickedInventory)) {
+                inv.openEvent(player, event)
                 return
             }
         }
