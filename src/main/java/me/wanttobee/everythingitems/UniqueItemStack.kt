@@ -100,6 +100,12 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         this.itemMeta = thisMeta
         return this
     }
+    fun updateCustomModelData(newModelData: Int) : UniqueItemStack {
+        val thisMeta = this.itemMeta!!
+        thisMeta.setCustomModelData(newModelData)
+        this.itemMeta = thisMeta
+        return this
+    }
     // this will give a glint to the item, without showing the real enchantment that has been applied
     // entering false in this method will remove the enchantment, but also the hide flag so real enchantments can be seen again
     fun updateEnchanted(newEnchanted: Boolean) : UniqueItemStack{

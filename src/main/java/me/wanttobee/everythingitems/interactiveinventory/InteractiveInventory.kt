@@ -23,7 +23,7 @@ abstract class InteractiveInventory : IUniqueItemObserver{
     companion object{
         // the separator is a black pane glass which is just the default separator. nothing special
         // in theory you could use any itemStack here
-        val separator = UniqueItemStack(Material.BLACK_STAINED_GLASS_PANE, " ", null)
+        val separator = UniqueItemStack(Material.BLACK_STAINED_GLASS_PANE, " ", null).updateCustomModelData(1)
     }
 
     init{
