@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.WantToBeeMe"
-version = "1.213.0"
+version = "3.213.0"
 
 repositories {
     mavenCentral()
