@@ -54,7 +54,7 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
 
         // we need to do this after setting the meta, cus this will also change the meta
         if(enchanted)
-            addUnsafeEnchantment(Enchantment.DURABILITY, 1)
+            addUnsafeEnchantment(Enchantment.UNBREAKING, 1)
     }
 
     // This ID can be used to compare items, for example 2 stone itemsStacks may seem indistinguishable,
@@ -114,8 +114,8 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         else thisMeta.removeItemFlags(ItemFlag.HIDE_ENCHANTS)
         this.itemMeta = thisMeta
 
-        if(newEnchanted) addUnsafeEnchantment(Enchantment.DURABILITY, 1)
-        else removeEnchantment(Enchantment.DURABILITY)
+        if(newEnchanted) addUnsafeEnchantment(Enchantment.UNBREAKING, 1)
+        else removeEnchantment(Enchantment.UNBREAKING)
 
         return this
     }
