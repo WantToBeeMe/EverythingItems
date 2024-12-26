@@ -1,11 +1,13 @@
 package me.wanttobee.everythingitems
 
 import me.wanttobee.everythingitems.ItemUtil.getUniqueID
+import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import org.bukkit.inventory.meta.components.CustomModelDataComponent
 import org.bukkit.persistence.PersistentDataType
 
 // a UniqueItemStack is like any other item stack
@@ -100,12 +102,22 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         this.itemMeta = thisMeta
         return this
     }
+
+    @Deprecated("For version 1.21.3 or below", level = DeprecationLevel.WARNING)
     fun updateCustomModelData(newModelData: Int) : UniqueItemStack {
         val thisMeta = this.itemMeta!!
         thisMeta.setCustomModelData(newModelData)
         this.itemMeta = thisMeta
         return this
     }
+
+    fun updateCustomModelDataComponent(comp: CustomModelDataComponent) : UniqueItemStack {
+        val thisMeta = this.itemMeta!!
+        thisMeta.setCustomModelDataComponent(comp)
+        this.itemMeta = thisMeta
+        return this
+    }
+
     // this will give a glint to the item, without showing the real enchantment that has been applied
     // entering false in this method will remove the enchantment, but also the hide flag so real enchantments can be seen again
     fun updateEnchanted(newEnchanted: Boolean) : UniqueItemStack{
@@ -140,5 +152,81 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
     }
     operator fun inc() : UniqueItemStack {
         return increaseCount()
+    }
+
+
+    // Custom Model data, with a lot of overloads, because now customModelData can be a lot
+    fun updateCustomModelData(strings: List<String>) : UniqueItemStack {
+        internalUpdateCMD { cmd -> cmd.strings = strings}
+        return this
+    }
+    fun updateCustomModelData(floats: List<Float>) : UniqueItemStack {
+        internalUpdateCMD { cmd -> cmd.floats = floats}
+        return this
+    }
+    fun updateCustomModelData(flags: List<Boolean>) : UniqueItemStack {
+        internalUpdateCMD { cmd -> cmd.flags = flags}
+        return this
+    }
+    fun updateCustomModelData(colors: List<Color>) : UniqueItemStack {
+        internalUpdateCMD { cmd -> cmd.colors = colors}
+        return this
+    }
+
+    fun updateCustomModelData(string: String, index: Int) : UniqueItemStack {
+        internalUpdateCMD { cmd ->
+            val strings = cmd.strings
+            if (index >= strings.size) {
+                while (strings.size <= index) {
+                    strings.add("")
+                }
+            }
+            strings[index] = string
+        }
+        return this
+    }
+    fun updateCustomModelData(float: Float, index: Int) : UniqueItemStack {
+        internalUpdateCMD { cmd ->
+            val floats = cmd.floats
+            if (index >= floats.size) {
+                while (floats.size <= index) {
+                    floats.add(0f)
+                }
+            }
+            floats[index] = float
+        }
+        return this
+    }
+    fun updateCustomModelData(flag: Boolean, index: Int) : UniqueItemStack {
+        internalUpdateCMD { cmd ->
+            val flags = cmd.flags
+            if (index >= flags.size) {
+                while (flags.size <= index) {
+                    flags.add(false)
+                }
+            }
+            flags[index] = flag
+        }
+        return this
+    }
+    fun updateCustomModelData(color: Color, index: Int) : UniqueItemStack {
+        internalUpdateCMD { cmd ->
+            val colors = cmd.colors
+            if (index >= colors.size) {
+                while (colors.size <= index) {
+                    colors.add(Color.WHITE)
+                }
+            }
+            colors[index] = color
+        }
+        return this
+    }
+
+    private fun internalUpdateCMD(update : (CustomModelDataComponent) -> Unit){
+        val thisMeta = this.itemMeta!!
+        val thisCMD = thisMeta.customModelDataComponent
+        update.invoke(thisCMD)
+        thisMeta.setCustomModelDataComponent(thisCMD)
+        this.itemMeta = thisMeta
     }
 }

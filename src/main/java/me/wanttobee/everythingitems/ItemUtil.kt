@@ -79,7 +79,8 @@ object ItemUtil {
 
     // returns the default (english) name of this item
     fun Material.getRealName(): String {
-        val name = this.name.lowercase()
+        // IMPORTANT, THIS IS NOT ENTIRELY ACCURATE. THERE ARE NAMES THAT DO NOT MATCH.
+        // LIKE THE LAPIS BLOCKS, AND ALL THE BLOCK THAT'S START WITH "Block of ..."
         var words = name.split("_")
 
         if (words.size == 2 && words[1] == "minecart") {

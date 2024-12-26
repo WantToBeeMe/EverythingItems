@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.github.WantToBeeMe"
-version = "3.213.1"
+version = "3.214.0"
 
 repositories {
     mavenCentral()
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.3-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.20")
 }
 
