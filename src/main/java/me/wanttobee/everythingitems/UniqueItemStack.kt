@@ -156,24 +156,24 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
 
 
     // Custom Model data, with a lot of overloads, because now customModelData can be a lot
-    fun updateCustomModelData(strings: List<String>) : UniqueItemStack {
+    fun updateStringCMD(strings: List<String>) : UniqueItemStack {
         internalUpdateCMD { cmd -> cmd.strings = strings}
         return this
     }
-    fun updateCustomModelData(floats: List<Float>) : UniqueItemStack {
+    fun updateFloatCMD(floats: List<Float>) : UniqueItemStack {
         internalUpdateCMD { cmd -> cmd.floats = floats}
         return this
     }
-    fun updateCustomModelData(flags: List<Boolean>) : UniqueItemStack {
+    fun updateFlagCMD(flags: List<Boolean>) : UniqueItemStack {
         internalUpdateCMD { cmd -> cmd.flags = flags}
         return this
     }
-    fun updateCustomModelData(colors: List<Color>) : UniqueItemStack {
+    fun updateColorCMD(colors: List<Color>) : UniqueItemStack {
         internalUpdateCMD { cmd -> cmd.colors = colors}
         return this
     }
 
-    fun updateCustomModelData(string: String, index: Int) : UniqueItemStack {
+    fun updateStringCMD(string: String, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
             val strings = cmd.strings
             if (index >= strings.size) {
@@ -185,7 +185,7 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         }
         return this
     }
-    fun updateCustomModelData(float: Float, index: Int) : UniqueItemStack {
+    fun updateFloatCMD(float: Float, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
             val floats = cmd.floats
             if (index >= floats.size) {
@@ -197,7 +197,7 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         }
         return this
     }
-    fun updateCustomModelData(flag: Boolean, index: Int) : UniqueItemStack {
+    fun updateFlagCMD(flag: Boolean, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
             val flags = cmd.flags
             if (index >= flags.size) {
@@ -209,7 +209,7 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
         }
         return this
     }
-    fun updateCustomModelData(color: Color, index: Int) : UniqueItemStack {
+    fun updateColorCMD(color: Color, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
             val colors = cmd.colors
             if (index >= colors.size) {
