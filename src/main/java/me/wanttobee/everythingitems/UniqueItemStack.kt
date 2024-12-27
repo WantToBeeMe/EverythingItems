@@ -16,7 +16,7 @@ import org.bukkit.persistence.PersistentDataType
 // and for example check if an item stack is the same as some other item stack
 // this is as specially cool because you can modify the items tack all you won't, changing the name, the material and all,
 // but it will always stay the same items tack (unless you change the namespace key)
-class UniqueItemStack(material: Material, title: String, lore: List<String>?, count: Int, enchanted : Boolean = false) : ItemStack(material, count) {
+open class UniqueItemStack(material: Material, title: String, lore: List<String>?, count: Int, enchanted : Boolean = false) : ItemStack(material, count) {
     constructor(material: Material, title: String, lore: String, enchanted : Boolean = false) : this(material, title, listOf(lore), 1,enchanted);
     constructor(material: Material, title: String,  lore: List<String>?, enchanted : Boolean = false) : this(material, title, lore, 1,enchanted);
     constructor(material: Material, title: String, lore: String, count:Int, enchanted : Boolean = false) : this(material, title, listOf(lore), count,enchanted)

@@ -5,7 +5,7 @@ import me.wanttobee.everythingitems.UniqueItemStack
 
 // this is yet another form of an interactive item
 // this refresh item allows for easy refreshing of the items look
-class RefreshHotBarItem(itemStack : UniqueItemStack) : InteractiveHotBarItem(itemStack) {
+open class RefreshHotBarItem(itemStack : UniqueItemStack) : InteractiveHotBarItem(itemStack) {
     // the effect on the refresh (it doesn't contain any player because fromm the items perspective it's not know who is holding this)
     private lateinit var refreshEffect : (RefreshHotBarItem) -> Unit
     // the interval set in ticks (time between refreshes)
