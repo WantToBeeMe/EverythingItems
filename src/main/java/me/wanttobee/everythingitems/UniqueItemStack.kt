@@ -175,49 +175,53 @@ class UniqueItemStack(material: Material, title: String, lore: List<String>?, co
 
     fun updateStringCMD(string: String, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
-            val strings = cmd.strings
-            if (index >= strings.size) {
-                while (strings.size <= index) {
-                    strings.add("")
+            val mutableStrings = cmd.strings.toMutableList()
+            if (index >= mutableStrings.size) {
+                while (mutableStrings.size <= index) {
+                    mutableStrings.add("")
                 }
             }
-            strings[index] = string
+            mutableStrings[index] = string
+            cmd.strings = mutableStrings
         }
         return this
     }
     fun updateFloatCMD(float: Float, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
-            val floats = cmd.floats
-            if (index >= floats.size) {
-                while (floats.size <= index) {
-                    floats.add(0f)
+            val mutableFloats = cmd.floats.toMutableList()
+            if (index >= mutableFloats.size) {
+                while (mutableFloats.size <= index) {
+                    mutableFloats.add(0f)
                 }
             }
-            floats[index] = float
+            mutableFloats[index] = float
+            cmd.floats = mutableFloats
         }
         return this
     }
     fun updateFlagCMD(flag: Boolean, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
-            val flags = cmd.flags
-            if (index >= flags.size) {
-                while (flags.size <= index) {
-                    flags.add(false)
+            val mutableFlags = cmd.flags.toMutableList()
+            if (index >= mutableFlags.size) {
+                while (mutableFlags.size <= index) {
+                    mutableFlags.add(false)
                 }
             }
-            flags[index] = flag
+            mutableFlags[index] = flag
+            cmd.flags = mutableFlags
         }
         return this
     }
     fun updateColorCMD(color: Color, index: Int) : UniqueItemStack {
         internalUpdateCMD { cmd ->
-            val colors = cmd.colors
-            if (index >= colors.size) {
-                while (colors.size <= index) {
-                    colors.add(Color.WHITE)
+            val mutableColors = cmd.colors.toMutableList()
+            if (index >= mutableColors.size) {
+                while (mutableColors.size <= index) {
+                    mutableColors.add(Color.WHITE)
                 }
             }
-            colors[index] = color
+            mutableColors[index] = color
+            cmd.colors = mutableColors
         }
         return this
     }
