@@ -42,17 +42,19 @@ open class UniqueItemStack(material: Material, title: String, lore: List<String>
 
     init{
         val thisMeta = this.itemMeta
-        thisMeta?.setDisplayName(title)
-        thisMeta?.persistentDataContainer?.set(
-            ItemUtil.itemNamespaceKey,
-            PersistentDataType.INTEGER,
-            currentFactoryID++
-        )
-        thisMeta?.lore = lore
-        if (enchanted)
-            thisMeta?.addItemFlags(ItemFlag.HIDE_ENCHANTS)
+        if ( thisMeta != null){
+            thisMeta.setDisplayName(title)
+            thisMeta.persistentDataContainer.set(
+                ItemUtil.itemNamespaceKey,
+                PersistentDataType.INTEGER,
+                currentFactoryID++
+            )
+            thisMeta.lore = lore
+            if (enchanted)
+                thisMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS)
 
-        this.itemMeta = thisMeta
+            this.itemMeta = thisMeta
+        }
 
         // we need to do this after setting the meta, cus this will also change the meta
         if(enchanted)
@@ -79,6 +81,13 @@ open class UniqueItemStack(material: Material, title: String, lore: List<String>
         for(itemObserver in itemObservers){
             itemObserver.onUniqueItemClear(this)
         }
+    }
+
+    fun updateMaxStackSize(newMaxStackSize: Int) : UniqueItemStack{
+        val thisMeta = this.itemMeta!!
+        thisMeta.setMaxStackSize(newMaxStackSize)
+        this.itemMeta = thisMeta
+        return this
     }
 
     fun updateMeta(newMeta : ItemMeta) : UniqueItemStack{
