@@ -78,7 +78,8 @@ open class UniqueItemStack(material: Material, title: String, lore: List<String>
     }
 
     fun clearItem(){
-        for(itemObserver in itemObservers){
+        // Duplicating the list, such that if you remove it in the process. it will not crash
+        for(itemObserver in itemObservers.toTypedArray()){
             itemObserver.onUniqueItemClear(this)
         }
     }
